@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GLB模型+HDR环境查看器（支持双人实时语音）</title>
+    <!-- 原有依赖保留，新增 WebRTC 无需额外依赖（浏览器原生支持） -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/PointerLockControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/RGBELoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/objects/EquirectangularToCubeGenerator.js"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>3D</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+        body {
+            background: #000;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .upload-area {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .file-input {
+            display: none;
+        }
+        .upload-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+            white-space: nowrap;
+        }
+        .upload-btn:hover {
+            background: #2980b9;
+        }
+        #hdr-btn {
+            background: #9b59b6;
+        }
+        #hdr-btn:hover {
+            background: #8e44ad;
+        }
+        /* 新增：语音控制区域样式 */
+        .voice-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+            background: #34495e;
+            padding: 0.8rem 1.2rem;
+            border-radius: 6px;
+        }
+        .voice-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .voice-btn.connected {
+            background: #2ecc71;
+        }
+        .voice-btn:hover {
+            opacity: 0.9;
+        }
+        #room-input {
+            padding: 0.5rem;
+            border: none;
+            border-radius: 4px;
+            width: 180px;
+            font-size: 0.9rem;
+        }
+        #voice-status {
+            color: #ecf0f1;
+            font-size: 0.9rem;
+            min-width: 150px;
+            text-align: center;
+        }
+        .info-container {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        #model-info, #hdr-info {
+            background: white;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: #333;
+            min-width: 180px;
+            text-align: center;
+        }
+        #canvas-container {
+            flex: 1;
+            position: relative;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 1.2rem;
+            display: none;
+        }
+        .error {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #e74c3c;
+            font-size: 1.2rem;
+            display: none;
+            text-align: center;
+            max-width: 80%;
+        }
+        #control-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            z-index: 100;
+            text-align: center;
+        }
+        /* 新增：语音提示叠加层 */
+        #voice-hint {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            background: rgba(46, 204, 113, 0.8);
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            z-index: 100;
+            display: none;
+        }
+        .hdr-drop-area {
+            margin: 0.5rem 0;
+            padding: 1rem;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            text-align: center;
+            color: #eee;
+            font-size: 0.9rem;
+            display: block;
+        }
+        .hdr-drop-area.highlight {
+            border-color: #9b59b6;
+            background-color: rgba(155, 89, 182, 0.1);
+        }
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+            .upload-area, .info-container, .voice-controls {
+                width: 100%;
+                justify-content: center;
+            }
+            #control-hint {
+                font-size: 0.8rem;
+                padding: 8px 15px;
+                max-width: 90%;
+            }
+            #voice-hint {
+                top: auto;
+                bottom: 60px;
+                left: 50%;
+                transform: translateX(-50%);
+                max-width: 80%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>GLB模型+HDR环境查看器（支持双人语音）</h1>
+        <div class="upload-area">
+            <button class="upload-btn" onclick="document.getElementById('glb-file-input').click()">选择 GLB 模型</button>
+            <input type="file" id="glb-file-input" class="file-input" accept=".glb" onchange="loadModel(this.files[0])">
+            
+            <button class="upload-btn" id="hdr-btn" onclick="document.getElementById('hdr-file-input').click()">选择 HDR 环境</button>
+            <input type="file" id="hdr-file-input" class="file-input" accept=".hdr" onchange="loadHDR(this.files[0])">
+            
+            <div class="info-container">
+                <div id="model-info">未加载模型</div>
+                <div id="hdr-info">未加载HDR</div>
+            </div>
+        </div>
+        
+        <!-- 新增：语音控制区域 -->
+        <div class="voice-controls">
+            <input type="text" id="room-input" placeholder="输入房间号（1-6位数字）" maxlength="6">
+            <button class="voice-btn" id="join-btn" onclick="toggleVoiceConnection()">
+                🎤 连接语音
+            </button>
+            <button class="voice-btn" id="mute-btn" onclick="toggleMute()" style="background: #f39c12;">
+                🔇 静音
+            </button>
+            <div id="voice-status">状态：未连接</div>
+        </div>
+        
+        <div class="hdr-drop-area" id="hdrDropArea">
+            <p>也可直接拖拽 HDR 文件到此处加载环境</p>
+        </div>
+    </header>
+    
+    <div id="canvas-container">
+        <div class="loading" id="loading">加载中...请稍候</div>
+        <div class="error" id="error">加载失败，请选择有效的文件</div>
+        <div id="control-hint">
+            🎮 操作说明：点击屏幕锁定鼠标 | WASD：前后左右 | 空格：跳跃 | Shift：加速 | ESC：释放鼠标
+        </div>
+        <!-- 新增：语音提示 -->
+        <div id="voice-hint">🎧 语音已连接 | 按 M 快速静音/取消静音</div>
+    </div>
+
+    <script>
+        // 原有全局变量保留
+        let scene, camera, renderer, controls, model;
+        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
+        let canJump = false, isRunning = false;
+        let velocity = new THREE.Vector3();
+        let direction = new THREE.Vector3();
+        let prevTime = performance.now();
+        let hdrTexture = null;
+        let cubeRenderTarget = null;
+        const hdrDropArea = document.getElementById('hdrDropArea');
+        const hdrInfo = document.getElementById('hdr-info');
+        const loadingElem = document.getElementById('loading');
+        const errorElem = document.getElementById('error');
+        const canvasContainer = document.getElementById('canvas-container');
+
+        // 新增：语音相关全局变量
+        let peerConnection = null; // WebRTC 连接对象
+        let localStream = null; // 本地麦克风流
+        let isVoiceConnected = false; // 语音连接状态
+        let isMuted = false; // 静音状态
+        const roomInput = document.getElementById('room-input');
+        const joinBtn = document.getElementById('join-btn');
+        const muteBtn = document.getElementById('mute-btn');
+        const voiceStatus = document.getElementById('voice-status');
+        const voiceHint = document.getElementById('voice-hint');
+
+        // 新增：简单的房间匹配（基于 localStorage 模拟，实际项目需用信令服务器）
+        const SIGNAL_KEY = 'webrtc_voice_signal'; // 用于交换信令的 localStorage 键
+        let signalListener = null; // 信令监听函数
+
+        // 页面加载完成初始化
+        window.onload = function() {
+            initScene();
+            bindHDRDropEvents();
+            bindVoiceKeyEvents(); // 绑定语音快捷键
+        };
+
+        // 原有 initScene、initLights、createGround 等函数保留不变...
+        function initScene() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x111111);
+            scene.environmentIntensity = 1.0;
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 1.7, 5);
+            renderer = new THREE.WebGLRenderer({ 
+                antialias: true,
+                physicallyCorrectLights: true,
+                alpha: false
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            canvasContainer.appendChild(renderer.domElement);
+            controls = new THREE.PointerLockControls(camera, document.body);
+            document.body.addEventListener('click', () => {
+                if (!controls.isLocked) {
+                    controls.lock();
+                }
+            });
+            document.addEventListener('pointerlockerror', () => {
+                console.warn('指针锁定暂时不可用，点击屏幕重试');
+            });
+            initLights();
+            createGround();
+            bindKeyEvents();
+            window.addEventListener('resize', onWindowResize);
+            animate();
+        }
+
+        function initLights() {
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            const mainLight = new THREE.DirectionalLight(0xffffff, 1.8);
+            mainLight.position.set(15, 20, 10);
+            mainLight.castShadow = true;
+            mainLight.shadow.mapSize.width = 4096;
+            mainLight.shadow.mapSize.height = 4096;
+            mainLight.shadow.bias = -0.001;
+            mainLight.shadow.camera.near = 0.5;
+            mainLight.shadow.camera.far = 200;
+            mainLight.shadow.camera.left = -50;
+            mainLight.shadow.camera.right = 50;
+            mainLight.shadow.camera.top = 50;
+            mainLight.shadow.camera.bottom = -50;
+            scene.add(mainLight);
+            const pointLight1 = new THREE.PointLight(0x88aaff, 0.8, 50);
+            pointLight1.position.set(20, 15, 15);
+            scene.add(pointLight1);
+            const pointLight2 = new THREE.PointLight(0xaa88ff, 0.6, 40);
+            pointLight2.position.set(-15, 10, -10);
+            scene.add(pointLight2);
+        }
+
+        function createGround() {
+            const groundGeometry = new THREE.PlaneGeometry(200, 200);
+            const groundMaterial = new THREE.MeshStandardMaterial({
+                color: 0x1a1a33,
+                roughness: 0.6,
+                metalness: 0.2,
+                receiveShadow: true,
+                envMapIntensity: 0.8
+            });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = 0;
+            scene.add(ground);
+        }
+
+        function bindKeyEvents() {
+            document.addEventListener('keydown', (event) => {
+                switch (event.code) {
+                    case 'KeyW': moveForward = true; break;
+                    case 'KeyA': moveLeft = true; break;
+                    case 'KeyS': moveBackward = true; break;
+                    case 'KeyD': moveRight = true; break;
+                    case 'Space': if (canJump) velocity.y += 8; canJump = false; break;
+                    case 'ShiftLeft': isRunning = true; break;
+                }
+            });
+            document.addEventListener('keyup', (event) => {
+                switch (event.code) {
+                    case 'KeyW': moveForward = false; break;
+                    case 'KeyA': moveLeft = false; break;
+                    case 'KeyS': moveBackward = false; break;
+                    case 'KeyD': moveRight = false; break;
+                    case 'ShiftLeft': isRunning = false; break;
+                }
+            });
+        }
+
+        // 原有 bindHDRDropEvents、preventDefaults、highlight 等函数保留不变...
+        function bindHDRDropEvents() {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                hdrDropArea.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+            ['dragenter', 'dragover'].forEach(eventName => {
+                hdrDropArea.addEventListener(eventName, highlight, false);
+            });
+            ['dragleave', 'drop'].forEach(eventName => {
+                hdrDropArea.addEventListener(eventName, unhighlight, false);
+            });
+            hdrDropArea.addEventListener('drop', handleHDRDrop, false);
+        }
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function highlight() {
+            hdrDropArea.classList.add('highlight');
+        }
+
+        function unhighlight() {
+            hdrDropArea.classList.remove('highlight');
+        }
+
+        function handleHDRDrop(e) {
+            const dt = e.dataTransfer;
+            const file = dt.files[0];
+            if (file) {
+                loadHDR(file);
+            }
+        }
+
+        // 原有 loadHDR、loadModel、onWindowResize、animate 等函数保留不变...
+        function loadHDR(file) {
+            if (!file) return;
+            if (file.type !== 'application/octet-stream' && !file.name.endsWith('.hdr')) {
+                showError('请选择有效的HDR文件！');
+                return;
+            }
+            showLoading(`正在加载HDR环境: ${file.name}`);
+            hdrInfo.textContent = `加载中: ${file.name}`;
+            const loader = new THREE.RGBELoader();
+            loader.load(URL.createObjectURL(file), (texture) => {
+                if (hdrTexture) hdrTexture.dispose();
+                if (cubeRenderTarget) cubeRenderTarget.dispose();
+                hdrTexture = texture;
+                hdrTexture.mapping = THREE.EquirectangularReflectionMapping;
+                hdrTexture.encoding = THREE.sRGBEncoding;
+                hdrTexture.generateMipmaps = true;
+                hdrTexture.minFilter = THREE.LinearMipmapLinearFilter;
+                hdrTexture.magFilter = THREE.LinearFilter;
+                cubeRenderTarget = new THREE.WebGLCubeRenderTarget(hdrTexture.image.height, {
+                    format: THREE.RGBAFormat,
+                    generateMipmaps: true,
+                    minFilter: THREE.LinearMipmapLinearFilter
+                });
+                cubeRenderTarget.fromEquirectangularTexture(renderer, hdrTexture);
+                scene.background = cubeRenderTarget.texture;
+                scene.environment = cubeRenderTarget.texture;
+                scene.environmentIntensity = 0.8;
+                scene.traverse((child) => {
+                    if (child.material && child.material.isMeshStandardMaterial) {
+                        child.material.envMap = cubeRenderTarget.texture;
+                        child.material.envMapIntensity = 0.8;
+                        child.material.needsUpdate = true;
+                    }
+                });
+                const fileSize = formatFileSize(file.size);
+                hdrInfo.textContent = `HDR环境: ${file.name} (${fileSize})`;
+                hideLoading();
+                hideError();
+            }, (progress) => {
+                const percent = (progress.loaded / progress.total * 100).toFixed(1);
+                loadingElem.textContent = `加载HDR环境: ${percent}%`;
+            }, (error) => {
+                showError('HDR加载失败: ' + (error.message || '未知错误'));
+                hdrInfo.textContent = 'HDR加载失败';
+                console.error('HDR加载错误:', error);
+            });
+        }
+
+        function loadModel(file) {
+            if (!file) return;
+            if (file.type !== 'model/gltf-binary' && !file.name.endsWith('.glb')) {
+                showError('请选择有效的GLB文件！');
+                return;
+            }
+            showLoading(`正在加载模型: ${file.name}`);
+            hideError();
+            if (model) {
+                scene.remove(model);
+                model.traverse((obj) => {
+                    if (obj.geometry) obj.geometry.dispose();
+                    if (obj.material) {
+                        Array.isArray(obj.material) 
+                            ? obj.material.forEach(mat => mat.dispose()) 
+                            : obj.material.dispose();
+                    }
+                });
+                model = null;
+            }
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const loader = new THREE.GLTFLoader();
+                loader.parse(e.target.result, '', function (gltf) {
+                    model = gltf.scene;
+                    const box = new THREE.Box3().setFromObject(model);
+                    const center = box.getCenter(new THREE.Vector3());
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const scale = maxDim > 30 ? 30 / maxDim : 1.5;
+                    model.scale.set(scale, scale, scale);
+                    model.position.sub(center.multiplyScalar(scale));
+                    model.position.y = 0;
+                    model.traverse((child) => {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                            if (child.material.isMeshStandardMaterial) {
+                                if (child.material.metalness > 0.3) {
+                                    child.material.metalness = Math.min(child.material.metalness + 0.2, 0.95);
+                                    child.material.roughness = Math.max(child.material.roughness - 0.3, 0.05);
+                                } else {
+                                    child.material.envMapIntensity = 1.8;
+                                }
+                                if (child.material.emissiveIntensity) {
+                                    child.material.emissiveIntensity = Math.max(child.material.emissiveIntensity, 1.5);
+                                }
+                                child.material.needsUpdate = true;
+                            } else {
+                                const newMat = new THREE.MeshStandardMaterial({
+                                    map: child.material.map,
+                                    color: child.material.color,
+                                    metalness: 0.6,
+                                    roughness: 0.4,
+                                    emissiveIntensity: 1.2
+                                });
+                                child.material.dispose();
+                                child.material = newMat;
+                            }
+                        }
+                    });
+                    scene.add(model);
+                    const modelCenter = box.getCenter(new THREE.Vector3()).multiplyScalar(scale);
+                    camera.position.set(modelCenter.x, modelCenter.y + 1.7, modelCenter.z + Math.max(size.x, size.z) * 1.2);
+                    camera.lookAt(modelCenter);
+                    document.getElementById('model-info').textContent = 
+                        `模型: ${file.name} | 尺寸: ${size.x.toFixed(2)}x${size.y.toFixed(2)}x${size.z.toFixed(2)}`;
+                    hideLoading();
+                }, function (error) {
+                    console.error('模型加载失败:', error);
+                    showError('模型加载失败: ' + (error.message || '未知错误'));
+                    document.getElementById('model-info').textContent = '模型加载失败';
+                });
+            };
+            reader.onerror = function () {
+                showError('文件读取失败');
+                document.getElementById('model-info').textContent = '模型加载失败';
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (controls.isLocked) {
+                const time = performance.now();
+                const delta = (time - prevTime) / 1000;
+                velocity.x -= velocity.x * 10.0 * delta;
+                velocity.z -= velocity.z * 10.0 * delta;
+                velocity.y -= 9.8 * 10.0 * delta;
+                direction.z = Number(moveForward) - Number(moveBackward);
+                direction.x = Number(moveRight) - Number(moveLeft);
+                direction.normalize();
+                const speed = isRunning ? 8 : 5;
+                if (moveForward || moveBackward) velocity.z -= direction.z * speed * delta;
+                if (moveLeft || moveRight) velocity.x -= direction.x * speed * delta;
+                controls.moveRight(-velocity.x * delta);
+                controls.moveForward(-velocity.z * delta);
+                if (camera.position.y < 1.8) {
+                    velocity.y = 0;
+                    camera.position.y = 1.7;
+                    canJump = true;
+                }
+                prevTime = time;
+            }
+            renderer.render(scene, camera);
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function showLoading(text = '加载中...请稍候') {
+            loadingElem.textContent = text;
+            loadingElem.style.display = 'block';
+        }
+
+        function hideLoading() {
+            loadingElem.style.display = 'none';
+        }
+
+        function showError(text = '加载失败') {
+            hideLoading();
+            errorElem.textContent = text;
+            errorElem.style.display = 'block';
+            setTimeout(() => {
+                errorElem.style.display = 'none';
+            }, 3000);
+        }
+
+        function hideError() {
+            errorElem.style.display = 'none';
+        }
+
+        // 新增：语音核心功能实现
+        /**
+         * 切换语音连接状态（连接/断开）
+         */
+        async function toggleVoiceConnection() {
+            if (isVoiceConnected) {
+                // 断开语音连接
+                disconnectVoice();
+                return;
+            }
+
+            // 连接语音前校验
+            const roomId = roomInput.value.trim();
+            if (!roomId || !/^\d{1,6}$/.test(roomId)) {
+                showError('请输入1-6位数字的房间号！');
+                return;
+            }
+
+            try {
+                // 1. 获取麦克风权限并创建本地流
+                localStream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: { 
+                        echoCancellation: true, // 回声消除
+                        noiseSuppression: true, // 噪声抑制
+                        autoGainControl: true // 自动增益
+                    },
+                    video: false // 仅音频，不开启视频
+                });
+
+                // 2. 初始化 WebRTC 连接
+                initPeerConnection();
+
+                // 3. 监听信令（用于和房间内另一人交换连接信息）
+                startSignalListener(roomId);
+
+                // 4. 检查房间内是否已有其他人（发起者/加入者逻辑）
+                const existingSignal = localStorage.getItem(`${SIGNAL_KEY}_${roomId}`);
+                if (existingSignal) {
+                    // 房间已有用户，作为「加入者」回应信令
+                    const offer = JSON.parse(existingSignal);
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+                    const answer = await peerConnection.createAnswer();
+                    await peerConnection.setLocalDescription(answer);
+                    // 发送回应信令
+                    localStorage.setItem(`${SIGNAL_KEY}_${roomId}_reply`, JSON.stringify(answer));
+                } else {
+                    // 房间无用户，作为「发起者」发送offer信令
+                    const offer = await peerConnection.createOffer();
+                    await peerConnection.setLocalDescription(offer);
+                    localStorage.setItem(`${SIGNAL_KEY}_${roomId}`, JSON.stringify(offer));
+                }
+
+                // 5. 更新UI状态
+                isVoiceConnected = true;
+                joinBtn.textContent = '📞 断开语音';
+                joinBtn.classList.add('connected');
+                voiceStatus.textContent = `状态：已连接房间 ${roomId}`;
+                voiceHint.style.display = 'block';
+                showError(`语音连接成功！房间号：${roomId}`, 2000); // 成功提示
+            } catch (error) {
+                console.error('语音连接失败:', error);
+                if (error.message.includes('permission denied')) {
+                    showError('麦克风权限被拒绝，请允许权限后重试！');
+                } else {
+                    showError('语音连接失败：' + error.message);
+                }
+                // 清理失败的连接
+                if (localStream) localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+        }
+
+        /**
+         * 初始化 WebRTC 连接对象
+         */
+        function initPeerConnection() {
+            // 配置 STUN 服务器（用于穿透 NAT，免费公共服务器）
+            const config = {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' }, // Google 公共 STUN 服务器
+                    { urls: 'stun:stun1.l.google.com:19302' }
+                ]
+            };
+
+            peerConnection = new RTCPeerConnection(config);
+
+            // 1. 添加本地音频流到连接
+            localStream.getAudioTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
+            });
+
+            // 2. 监听远程流（接收对方语音）
+            peerConnection.ontrack = (event) => {
+                const remoteStream = event.streams[0];
+                // 创建音频元素播放对方语音（隐藏在页面中）
+                const audioElem = document.createElement('audio');
+                audioElem.srcObject = remoteStream;
+                audioElem.autoplay = true;
+                audioElem.hidden = true;
+                document.body.appendChild(audioElem);
+            };
+
+            // 3. 监听 ICE 候选（网络连接信息）
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    // 发送 ICE 候选到对方（通过 localStorage 模拟）
+                    const roomId = roomInput.value.trim();
+                    const candidates = JSON.parse(localStorage.getItem(`${SIGNAL_KEY}_${roomId}_candidates`) || '[]');
+                    candidates.push(event.candidate.toJSON());
+                    localStorage.setItem(`${SIGNAL_KEY}_${roomId}_candidates`, JSON.stringify(candidates));
+                }
+            };
+
+            // 4. 监听连接状态变化
+            peerConnection.onconnectionstatechange = () => {
+                switch (peerConnection.connectionState) {
+                    case 'connected':
+                        voiceStatus.textContent = `状态：已连接房间 ${roomInput.value.trim()}`;
+                        break;
+                    case 'disconnected':
+                    case 'failed':
+                        showError('语音连接断开！');
+                        disconnectVoice();
+                        break;
+                }
+            };
+        }
+
+        /**
+         * 监听信令（用于接收对方的 offer/answer/ICE 候选）
+         */
+        function startSignalListener(roomId) {
+            // 清除之前的监听
+            if (signalListener) {
+                window.removeEventListener('storage', signalListener);
+            }
+
+            signalListener = async (e) => {
+                const key = e.key;
+                // 处理对方的 answer 信令（发起者接收）
+                if (key === `${SIGNAL_KEY}_${roomId}_reply`) {
+                    const answer = JSON.parse(e.newValue);
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+                    // 加载对方的 ICE 候选
+                    const candidates = JSON.parse(localStorage.getItem(`${SIGNAL_KEY}_${roomId}_candidates`) || '[]');
+                    candidates.forEach(candidate => {
+                        peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                    });
+                }
+
+                // 处理对方的 offer 信令（加入者接收）
+                if (key === `${SIGNAL_KEY}_${roomId}` && !peerConnection.currentLocalDescription) {
+                    const offer = JSON.parse(e.newValue);
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+                    const answer = await peerConnection.createAnswer();
+                    await peerConnection.setLocalDescription(answer);
+                    localStorage.setItem(`${SIGNAL_KEY}_${roomId}_reply`, JSON.stringify(answer));
+                }
+
+                // 处理对方的 ICE 候选（实时接收）
+                if (key === `${SIGNAL_KEY}_${roomId}_candidates`) {
+                    const candidates = JSON.parse(e.newValue);
+                    const lastCandidate = candidates[candidates.length - 1];
+                    if (lastCandidate && peerConnection.remoteDescription) {
+                        await peerConnection.addIceCandidate(new RTCIceCandidate(lastCandidate));
+                    }
+                }
+            };
+
+            window.addEventListener('storage', signalListener);
+        }
+
+        /**
+         * 断开语音连接
+         */
+        function disconnectVoice() {
+            // 1. 关闭 WebRTC 连接
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+
+            // 2. 停止本地麦克风流
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+
+            // 3. 清除信令存储
+            const roomId = roomInput.value.trim();
+            localStorage.removeItem(`${SIGNAL_KEY}_${roomId}`);
+            localStorage.removeItem(`${SIGNAL_KEY}_${roomId}_reply`);
+            localStorage.removeItem(`${SIGNAL_KEY}_${roomId}_candidates`);
+
+            // 4. 移除信令监听
+            if (signalListener) {
+                window.removeEventListener('storage', signalListener);
+                signalListener = null;
+            }
+
+            // 5. 恢复 UI 状态
+            isVoiceConnected = false;
+            isMuted = false;
+            joinBtn.textContent = '🎤 连接语音';
+            joinBtn.classList.remove('connected');
+            muteBtn.textContent = '🔇 静音';
+            muteBtn.style.background = '#f39c12';
+            voiceStatus.textContent = '状态：未连接';
+            voiceHint.style.display = 'none';
+
+            // 6. 移除远程音频元素
+            document.querySelectorAll('audio[hidden]').forEach(elem => elem.remove());
+        }
+
+        /**
+         * 切换静音状态
+         */
+        function toggleMute() {
+            if (!localStream) return;
+
+            isMuted = !isMuted;
+            // 切换本地麦克风轨道的静音状态
+            localStream.getAudioTracks().forEach(track => {
+                track.enabled = !isMuted;
+            });
+
+            // 更新 UI
+            if (isMuted) {
+                muteBtn.textContent = '🔊 取消静音';
+                muteBtn.style.background = '#9b59b6';
+                voiceHint.textContent = '🎧 语音已连接（已静音）| 按 M 快速取消静音';
+            } else {
+                muteBtn.textContent = '🔇 静音';
+                muteBtn.style.background = '#f39c12';
+                voiceHint.textContent = '🎧 语音已连接 | 按 M 快速静音/取消静音';
+            }
+        }
+
+        /**
+         * 绑定语音快捷键（M 键静音/取消静音）
+         */
+        function bindVoiceKeyEvents() {
+            document.addEventListener('keydown', (event) => {
+                // 仅在语音连接时生效
+                if (!isVoiceConnected) return;
+
+                // 按 M 键切换静音
+                if (event.code === 'KeyM') {
+                    event.preventDefault(); // 阻止浏览器默认行为
+                    toggleMute();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
