@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XX工程 - 专业工程解决方案提供商</title>
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* 全局重置与基础样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft Yahei', 'PingFang SC', sans-serif;
+        }
+        body {
+            color: #333;
+            line-height: 1.5;
+            background-color: #ffffff;
+        }
+        a {
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s ease;
+        }
+        ul {
+            list-style: none;
+        }
+        .container {
+            width: 92%;
+            max-width: 1140px;
+            margin: 0 auto;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #0f4c81;
+            color: white;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 15px;
+            transition: background-color 0.3s ease;
+        }
+        .btn:hover {
+            background-color: #0a3966;
+        }
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid #0f4c81;
+            color: #0f4c81;
+            margin-left: 12px;
+        }
+        .btn-outline:hover {
+            background-color: #0f4c81;
+            color: white;
+        }
+        /* 标题样式统一 */
+        .section-title {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        .section-title h2 {
+            font-size: 32px;
+            color: #0f4c81;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        .section-title p {
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto;
+            font-size: 15px;
+        }
+        /* 导航栏 */
+        header {
+            background-color: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 999;
+            padding: 18px 0;
+            box-shadow: 0 1px 8px rgba(0, 0, 0, 0.05);
+        }
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 22px;
+            font-weight: 600;
+            color: #0f4c81;
+        }
+        .logo span {
+            color: #ff7f0e;
+        }
+        .nav-links {
+            display: flex;
+            gap: 35px;
+        }
+        .nav-links a {
+            font-weight: 500;
+            color: #333;
+            font-size: 15px;
+            position: relative;
+        }
+        .nav-links a:hover {
+            color: #0f4c81;
+        }
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: #0f4c81;
+            transition: width 0.3s ease;
+        }
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+        .mobile-menu-btn {
+            display: none;
+            font-size: 22px;
+            cursor: pointer;
+            color: #333;
+        }
+        /* Banner区 */
+        .banner {
+            height: 100vh;
+            background: linear-gradient(rgba(15, 76, 129, 0.75), rgba(15, 76, 129, 0.75)), url('https://picsum.photos/1920/1080?random=1') center/cover no-repeat;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            margin-top: -74px;
+            padding-top: 74px;
+        }
+        .banner-content h1 {
+            font-size: 42px;
+            margin-bottom: 20px;
+            line-height: 1.3;
+            font-weight: 600;
+        }
+        .banner-content p {
+            font-size: 17px;
+            margin-bottom: 36px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            opacity: 0.9;
+        }
+        /* 核心业务 */
+        .services {
+            padding: 100px 0;
+            background-color: #fafafa;
+        }
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+        }
+        .service-card {
+            background-color: white;
+            padding: 40px 30px;
+            border-radius: 6px;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.04);
+            transition: transform 0.3s ease;
+        }
+        .service-card:hover {
+            transform: translateY(-6px);
+        }
+        .service-card i {
+            font-size: 36px;
+            color: #0f4c81;
+            margin-bottom: 20px;
+        }
+        .service-card h3 {
+            font-size: 19px;
+            margin-bottom: 12px;
+            color: #333;
+            font-weight: 600;
+        }
+        .service-card p {
+            color: #666;
+            margin-bottom: 24px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        /* 关于我们 */
+        .about {
+            padding: 100px 0;
+            background-color: white;
+        }
+        .about-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+        .about-img img {
+            width: 100%;
+            border-radius: 6px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        .about-text h3 {
+            font-size: 26px;
+            color: #0f4c81;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .about-text p {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.7;
+            font-size: 15px;
+        }
+        .about-stats {
+            display: flex;
+            gap: 40px;
+            margin: 30px 0;
+        }
+        .stat-item {
+            text-align: left;
+        }
+        .stat-item h4 {
+            font-size: 32px;
+            color: #0f4c81;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+        .stat-item p {
+            color: #666;
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 0;
+        }
+        /* 案例展示 */
+        .projects {
+            padding: 100px 0;
+            background-color: #fafafa;
+        }
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+        }
+        .project-card {
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
+            position: relative;
+            cursor: pointer;
+        }
+        .project-card img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        .project-card:hover img {
+            transform: scale(1.04);
+        }
+        .project-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(transparent, rgba(15, 76, 129, 0.9));
+            color: white;
+            padding: 20px;
+        }
+        .project-overlay h3 {
+            margin-bottom: 4px;
+            font-size: 18px;
+            font-weight: 500;
+        }
+        .project-overlay p {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+        /* 联系我们 */
+        .contact {
+            padding: 100px 0;
+            background-color: #0f4c81;
+            color: white;
+        }
+        .contact-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+        }
+        .contact-info h3 {
+            font-size: 26px;
+            margin-bottom: 26px;
+            font-weight: 600;
+        }
+        .contact-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 22px;
+        }
+        .contact-item i {
+            font-size: 18px;
+            width: 36px;
+            height: 36px;
+            background-color: rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 2px;
+        }
+        .contact-item .contact-text h4 {
+            font-size: 16px;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+        .contact-item .contact-text p {
+            opacity: 0.8;
+            font-size: 14px;
+        }
+        .contact-form {
+            background-color: white;
+            padding: 36px;
+            border-radius: 6px;
+            color: #333;
+        }
+        .contact-form h4 {
+            font-size: 20px;
+            color: #0f4c81;
+            margin-bottom: 24px;
+            font-weight: 600;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #333;
+        }
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #0f4c81;
+        }
+        .form-group textarea {
+            height: 120px;
+            resize: none;
+        }
+        /* 页脚 */
+        footer {
+            background-color: #0a3966;
+            color: white;
+            padding: 60px 0 25px;
+        }
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        .footer-col h4 {
+            font-size: 16px;
+            margin-bottom: 20px;
+            position: relative;
+            font-weight: 500;
+        }
+        .footer-col h4::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -8px;
+            width: 40px;
+            height: 2px;
+            background-color: #ff7f0e;
+        }
+        .footer-col p {
+            margin-bottom: 15px;
+            opacity: 0.8;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .footer-col ul li {
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .footer-col ul li a {
+            opacity: 0.8;
+        }
+        .footer-col ul li a:hover {
+            color: #ff7f0e;
+            padding-left: 5px;
+            opacity: 1;
+        }
+        .social-links {
+            display: flex;
+            gap: 12px;
+            margin-top: 15px;
+        }
+        .social-links a {
+            width: 36px;
+            height: 36px;
+            background-color: rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .social-links a:hover {
+            background-color: #ff7f0e;
+        }
+        .copyright {
+            text-align: center;
+            padding-top: 25px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            opacity: 0.7;
+            font-size: 13px;
+        }
+        /* 响应式适配 */
+        @media (max-width: 992px) {
+            .about-content, .contact-content {
+                grid-template-columns: 1fr;
+            }
+            .banner-content h1 {
+                font-size: 36px;
+            }
+            .about-stats {
+                gap: 30px;
+            }
+        }
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            .mobile-menu-btn {
+                display: block;
+            }
+            .section-title h2 {
+                font-size: 28px;
+            }
+            .banner-content h1 {
+                font-size: 30px;
+            }
+            .services-grid, .projects-grid {
+                grid-template-columns: 1fr;
+            }
+            .about-content {
+                gap: 30px;
+            }
+            .contact-content {
+                gap: 30px;
+            }
+            .btn-outline {
+                margin-left: 0;
+                margin-top: 12px;
+                display: block;
+                width: 100%;
+                text-align: center;
+            }
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <header>
+        <div class="container">
+            <nav class="navbar">
+                <div class="logo">XX<span>工程</span></div>
+                <ul class="nav-links">
+                    <li><a href="#home">首页</a></li>
+                    <li><a href="#services">核心业务</a></li>
+                    <li><a href="#about">关于我们</a></li>
+                    <li><a href="#projects">工程案例</a></li>
+                    <li><a href="#contact">联系我们</a></li>
+                </ul>
+                <div class="mobile-menu-btn">
+                    <i class="fas fa-bars">/</i>
+                </div>
+            </nav>
+        </div>
+    </header>
+    <!-- Banner轮播区 -->
+    <section class="banner" id="home">
+        <div class="banner-content">
+            <h1>匠心筑造 品质工程<br>引领行业发展新高度</h1>
+            <p>专注工程建设领域数十年，提供从设计、施工到运维的全产业链解决方案，以专业实力打造精品工程</p>
+            <a href="#contact" class="btn">咨询合作</a>
+            <a href="#projects" class="btn btn-outline">查看案例</a>
+        </div>
+    </section>
+    <!-- 核心业务模块 -->
+    <section class="services" id="services">
+        <div class="container">
+            <div class="section-title">
+                <h2>核心业务</h2>
+                <p>覆盖工程建设全领域，为客户提供一站式、定制化的工程解决方案</p>
+            </div>
+            <div class="services-grid">
+                <div class="service-card">
+                    <i class="fas fa-building">/</i>
+                    <h3>建筑工程</h3>
+                    <p>涵盖商业综合体、住宅社区等各类建筑项目，提供设计、施工、监理一体化服务。</p>
+                    <a href="#" class="btn">了解更多</a>
+                </div>
+                <div class="service-card">
+                    <i class="fas fa-road">/</i>
+                    <h3>市政工程</h3>
+                    <p>专业从事城市道路、桥梁、管网等基础设施建设，助力城市功能升级与发展。</p>
+                    <a href="#" class="btn">了解更多</a>
+                </div>
+                <div class="service-card">
+                    <i class="fas fa-industry">/</i>
+                    <h3>工业工程</h3>
+                    <p>提供厂房建设、设备安装、生产线改造等工业类项目全流程工程服务。</p>
+                    <a href="#" class="btn">了解更多</a>
+                </div>
+                <div class="service-card">
+                    <i class="fas fa-shield-alt">/</i>
+                    <h3>工程维保</h3>
+                    <p>提供工程竣工后定期维护、故障维修、升级改造等持续性服务保障。</p>
+                    <a href="#" class="btn">了解更多</a>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- 关于我们模块 -->
+    <section class="about" id="about">
+        <div class="container">
+            <div class="about-content">
+                <div class="about-img">
+                    <img src="https://picsum.photos/800/600?random=2" alt="企业办公环境">
+                </div>
+                <div class="about-text">
+                    <h3>关于XX工程</h3>
+                    <p>XX工程成立于2000年，是一家集工程设计、施工、运维于一体的综合性企业，拥有国家甲级设计资质和一级施工资质。</p>
+                    <p>多年来始终坚守"质量第一、客户至上"的经营理念，先后完成千余项重点工程项目，赢得客户与社会的广泛认可。</p>
+                    <div class="about-stats">
+                        <div class="stat-item">
+                            <h4>20+</h4>
+                            <p>行业经验</p>
+                        </div>
+                        <div class="stat-item">
+                            <h4>1000+</h4>
+                            <p>完成项目</p>
+                        </div>
+                        <div class="stat-item">
+                            <h4>500+</h4>
+                            <p>专业团队</p>
+                        </div>
+                    </div>
+                    <a href="#" class="btn">企业简介</a>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- 案例展示模块 -->
+    <section class="projects" id="projects">
+        <div class="container">
+            <div class="section-title">
+                <h2>工程案例</h2>
+                <p>每一个案例都是我们专业实力的见证，以匠心打造经得起时间检验的精品工程</p>
+            </div>
+            <div class="projects-grid">
+                <div class="project-card" data-model-path="ZT.glb" data-hdr-path="shanghai_bund_4k.hdr">
+                    <img src="https://picsum.photos/800/500?random=3" alt="商业综合体项目">
+                    <div class="project-overlay">
+                        <h3>城市商业综合体 <i class="fas fa-external-link-alt">/</i></h3>
+                        <p>建筑工程 | 建筑面积20万㎡</p>
+                    </div>
+                </div>
+                <div class="project-card" data-model-path="models/road.glb" data-hdr-path="hdrs/city.hdr">
+                    <img src="https://picsum.photos/800/500?random=4" alt="城市快速路项目">
+                    <div class="project-overlay">
+                        <h3>城市快速路工程 <i class="fas fa-external-link-alt">/</i></h3>
+                        <p>市政工程 | 全长15公里</p>
+                    </div>
+                </div>
+                <div class="project-card" data-model-path="models/factory.glb" data-hdr-path="hdrs/industrial.hdr">
+                    <img src="https://picsum.photos/800/500?random=5" alt="智能制造工厂项目">
+                    <div class="project-overlay">
+                        <h3>智能制造工厂 <i class="fas fa-external-link-alt">/</i></h3>
+                        <p>工业工程 | 占地5万㎡</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- 联系我们模块 -->
+    <section class="contact" id="contact">
+        <div class="container">
+            <div class="contact-content">
+                <div class="contact-info">
+                    <h3>联系我们</h3>
+                    <div class="contact-item">
+                        <i class="fas fa-map-marker-alt">/</i>
+                        <div class="contact-text">
+                            <h4>公司地址</h4>
+                            <p>北京市朝阳区建国路88号现代城</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-phone">/</i>
+                        <div class="contact-text">
+                            <h4>联系电话</h4>
+                            <p>010-12345678 | 13800138000</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-envelope">/</i>
+                        <div class="contact-text">
+                            <h4>电子邮箱</h4>
+                            <p>contact@xxengineering.com</p>
+                        </div>
+                    </div>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-weixin">/</i></a>
+                        <a href="#"><i class="fab fa-weibo">/</i></a>
+                        <a href="#"><i class="fab fa-linkedin">/</i></a>
+                    </div>
+                </div>
+                <div class="contact-form">
+                    <h4>在线咨询</h4>
+                    <form>
+                        <div class="form-group">
+                            <input type="text" placeholder="您的姓名" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="tel" placeholder="联系电话" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="email" placeholder="电子邮箱" required>
+                        </div>
+                        <div class="form-group">
+                            <textarea placeholder="您的需求描述..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn">提交咨询</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- 页脚 -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-col">
+                    <h4>XX工程</h4>
+                    <p>专注工程建设领域，以专业、品质、服务为核心，打造行业标杆企业。</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-weixin">/</i></a>
+                        <a href="#"><i class="fab fa-weibo">/</i></a>
+                        <a href="#"><i class="fab fa-linkedin">/</i></a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h4>核心业务</h4>
+                    <ul>
+                        <li><a href="#">建筑工程</a></li>
+                        <li><a href="#">市政工程</a></li>
+                        <li><a href="#">工业工程</a></li>
+                        <li><a href="#">工程维保</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>关于我们</h4>
+                    <ul>
+                        <li><a href="#">企业简介</a></li>
+                        <li><a href="#">发展历程</a></li>
+                        <li><a href="#">荣誉资质</a></li>
+                        <li><a href="#">团队介绍</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>法律声明</h4>
+                    <ul>
+                        <li><a href="#">隐私政策</a></li>
+                        <li><a href="#">服务条款</a></li>
+                        <li><a href="#">法律声明</a></li>
+                        <li><a href="#">网站地图</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright">
+                <p>© 2026 XX工程 版权所有 | 京ICP备12345678号</p>
+            </div>
+        </div>
+    </footer>
+    <script>
+        // 平滑滚动效果
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+        // 移动端菜单
+        const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+        const navLinks = document.querySelector('.nav-links');
+        mobileMenuBtn.addEventListener('click', () => {
+            navLinks.style.display = navLinks.style.display === 'flex' ? 'none' : 'flex';
+            navLinks.style.flexDirection = 'column';
+            navLinks.style.position = 'absolute';
+            navLinks.style.top = '74px';
+            navLinks.style.right = '20px';
+            navLinks.style.background = 'white';
+            navLinks.style.padding = '20px';
+            navLinks.style.boxShadow = '0 5px 15px rgba(0,0,0,0.1)';
+            navLinks.style.borderRadius = '4px';
+            navLinks.style.gap = '15px';
+        });
+        // 工程案例点击事件（关联3D查看器）- 新标签页打开，保留主页面
+        const projectCards = document.querySelectorAll('.project-card');
+        projectCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const modelPath = card.getAttribute('data-model-path');
+                const hdrPath = card.getAttribute('data-hdr-path');
+                // 新标签页打开，删除固定尺寸参数，保留主页面
+                window.open(`3d-viewer.html?model=${encodeURIComponent(modelPath)}&hdr=${encodeURIComponent(hdrPath)}`, '_blank');
+            });
+        });
+    </script>
+</body>
+</html>
